@@ -10,11 +10,14 @@ import os
 
 def makeQRDinamico(data: str, logoURL:str):
 
+    color_back = (255, 255, 255)
+    color_edge = (101, 101, 101)
+    center_color = (98, 19, 51)
     # Obtenemos el logo que ira en el centro del QR
     # ogoURL = os.path.join(os.getcwd(), 'media', 'InfoBanner.jpg')
     # logoPath = os.path.relpath(logoURL)
     logo = Image.open(logoURL)
-
+    print(logoURL)
     # Le damos el tamaño a logo del centro
     baseWidth = 200
     wpercent = (baseWidth/float(logo.size[0]))
@@ -38,7 +41,7 @@ def makeQRDinamico(data: str, logoURL:str):
 
     # Se genera el formato del QR, así como los colores
     QRImg = QRcode.make_image(image_factory=StyledPilImage, module_drawer=RoundedModuleDrawer(
-    ),  color_mask=RadialGradiantColorMask(back_color=(255, 255, 255), edge_color=(101, 101, 101), center_color=(98, 19, 51)))
+    ),  color_mask=RadialGradiantColorMask(back_color=color_back, edge_color=color_edge, center_color=center_color))
 
     # Pega la imagen del logo en el centro del QR
     QRImg.paste(logo, ((QRImg.size[0] - logo.size[0]) //
