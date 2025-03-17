@@ -8,11 +8,18 @@ from qrcode.image.styles.colormasks import RadialGradiantColorMask
 import os
 
 
-def makeQRDinamico(data: str, logoURL:str):
+def makeQRDinamico(data: str, logoURL:str, back_color:tuple, edge_color:tuple, center_color:tuple):
+    """Genera un QR dinámico con un logo en el centro y un color de fondo y borde"""
 
-    color_back = (255, 255, 255)
-    color_edge = (101, 101, 101)
-    center_color = (98, 19, 51)
+    color_back = back_color
+    color_edge = edge_color
+    color_center = center_color
+
+    print(edge_color)
+    print(center_color)
+    print(back_color)
+
+
     # Obtenemos el logo que ira en el centro del QR
     # ogoURL = os.path.join(os.getcwd(), 'media', 'InfoBanner.jpg')
     # logoPath = os.path.relpath(logoURL)
@@ -41,7 +48,7 @@ def makeQRDinamico(data: str, logoURL:str):
 
     # Se genera el formato del QR, así como los colores
     QRImg = QRcode.make_image(image_factory=StyledPilImage, module_drawer=RoundedModuleDrawer(
-    ),  color_mask=RadialGradiantColorMask(back_color=color_back, edge_color=color_edge, center_color=center_color))
+    ),  color_mask=RadialGradiantColorMask(back_color=color_back, edge_color=color_edge, center_color=color_center))
 
     # Pega la imagen del logo en el centro del QR
     QRImg.paste(logo, ((QRImg.size[0] - logo.size[0]) //
