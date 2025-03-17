@@ -2,10 +2,9 @@ import customtkinter
 from tkinter import filedialog,colorchooser
 import qrDinamico
 
-# file_path = ""
 
-def button_callback():
-	# pth = os.path.join(os.getcwd(),'media', 'logoDif.jpg')
+
+def btn_Generar():
 	print(file_path)
 	try:
 		qrDinamico.makeQRDinamico(txtData.get(),file_path)
@@ -49,16 +48,16 @@ txtData.grid(row=1, column=0, padx=10, pady=10,columnspan=3)
 upload_button = customtkinter.CTkButton(app, text="Upload File", command=upload_file)
 upload_button.grid(row=2, column=0, padx=20, pady=20)
 
-buttonBack = customtkinter.CTkButton(app, text="Color Button", command=choose_colorBack)
+buttonBack = customtkinter.CTkButton(app, text="Background Color", command=choose_colorBack)
 buttonBack.grid(row=3, column=0, padx=10, pady=10)
 
-buttonCenter = customtkinter.CTkButton(app, text="Color Button", command=choose_colorCenter)
+buttonCenter = customtkinter.CTkButton(app, text="Center Color", command=choose_colorCenter)
 buttonCenter.grid(row=3, column=1, padx=10, pady=10)
 
-buttonEdge = customtkinter.CTkButton(app, text="Color Button", command=choose_colorEdge)
+buttonEdge = customtkinter.CTkButton(app, text="Edge Color", command=choose_colorEdge)
 buttonEdge.grid(row=3, column=2, padx=10, pady=10)
 
-button = customtkinter.CTkButton(app, text="my button", command=button_callback)
+button = customtkinter.CTkButton(app, text="Generar", command=btn_Generar)
 button.grid(row=4, column=0, padx=20, pady=20)
 
 app.mainloop()
