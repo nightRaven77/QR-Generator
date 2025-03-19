@@ -8,11 +8,12 @@ def btn_Generar():
 	print("Center: ", centerColor[0])
 	print("Back: ",backColor[0])
 	print("Edge: ",edgeColor[0])
-	try:
+	try:	
 		qrDinamico.makeQRDinamico(txtData.get(), file_path, backColor[0], edgeColor[0], centerColor[0])	
+		txtData.delete(0, customtkinter.END)
+		print("Center: ", centerColor[0])
 	except Exception:
 		print("Error al generar el QR: ")
-
 
 def upload_file():
 	global file_path
@@ -23,13 +24,11 @@ def upload_file():
 		print("Selected file:", file_path)
         # Process the selected file here
 
-
 def choose_colorCenter():
     # variable to store hexadecimal code of color
 	global centerColor
 	centerColor = colorchooser.askcolor(title="Choose Center color")
 	print("Center: ", centerColor[0])
-
 
 def choose_colorBack():
     # variable to store hexadecimal code of color
