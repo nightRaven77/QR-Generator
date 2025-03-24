@@ -1,7 +1,6 @@
 import qrcode
 
 from qrcode.image.styledpil import StyledPilImage
-
 from qrcode.image.styles.moduledrawers.pil import *
 from qrcode.image.styles.colormasks import RadialGradiantColorMask
 
@@ -18,14 +17,11 @@ module_drawers = {
 }
 
 
-selected_drawer = 'squarew'
-
-
 QRcode = qrcode.QRCode(
     version=3,
     error_correction=qrcode.constants.ERROR_CORRECT_H,
-    box_size=18,
-    border=1
+    box_size=10,
+    border=4
 )
 
 # se añade la información que contendra el QR
@@ -34,10 +30,18 @@ QRcode.add_data(
 
 QRcode.make()
 
-QRImg = QRcode.make_image(image_factory=StyledPilImage, module_drawer=module_drawers.get(selected_drawer, module_drawers['default']),
-                          color_mask=RadialGradiantColorMask(
-    back_color=(255, 255, 255), edge_color=(101, 101, 101), center_color=(98, 19, 51)),
-    embeded_image_path="./assets/logo.png", embeded_image_ratio=1)
+QRImg = QRcode.make_image(
+    image_factory=StyledPilImage,
+    module_drawer=module_drawers.get(
+        selected_drawer, module_drawers['default']),
+    color_mask=RadialGradiantColorMask(
+        back_color=(255, 255, 255),
+        edge_color=(101, 101, 101),
+        center_color=(98, 19, 51)
+    ),
+    embeded_image_path="./assets/logo.png",
+    embeded_image_ratio=0.2
+)
 
 
 if os.name != 'nt':
