@@ -56,7 +56,7 @@ python main.py
 QR-Generator/
 ├── main.py           # Main application file with GUI
 ├── qrDinamico.py    # QR code generation logic
-└── assets/          # Folder for storing assets
+
 ```
 
 ## Contributing
