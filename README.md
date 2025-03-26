@@ -29,7 +29,7 @@ A customizable QR code generator with a modern graphical user interface built us
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/QR-Generator.git
+git clone https://github.com/nightRaven77/QR-Generator.git
 ```
 
 2. Install the required packages:
@@ -56,7 +56,7 @@ python main.py
 QR-Generator/
 ├── main.py           # Main application file with GUI
 ├── qrDinamico.py    # QR code generation logic
-└── assets/          # Folder for storing assets
+
 ```
 
 ## Contributing
