@@ -17,7 +17,7 @@ module_drawers = {
 }
 
 
-def makeQRDinamico(data: str, logoURL: str, back_color: tuple, edge_color: tuple, center_color: tuple, selected_drawer: str):
+def makeQRDinamico(data: str, logoURL: str, back_color: tuple, edge_color: tuple, center_color: tuple, selected_drawer: str, ratio: float = 0.5):
     """Genera un QR dinámico con un logo en el centro y un color de fondo y borde"""
 
     # genera la  version del QR, tamaño y la correccion de errores
@@ -44,21 +44,20 @@ def makeQRDinamico(data: str, logoURL: str, back_color: tuple, edge_color: tuple
             center_color=center_color,
         ),
         embeded_image_path=logoURL,
-        embeded_image_ratio=0.2
+        embeded_image_ratio=ratio
     )
     # Guarda el QR en la carpeta Exported en el escritorio, dependiendo del sistema operativo
-    if os.name != 'nt':
-        save = os.path.join(os.path.join(
-            os.path.expanduser('~')), 'Desktop', 'exported')
-    else:
-        save = os.path.join(os.path.join(
-            os.environ['USERPROFILE']), 'Desktop', 'exported')
+    # if os.name != 'nt':
+    #     save = os.path.join(os.path.join(
+    #         os.path.expanduser('~')), 'Desktop', 'exported')
+    # else:
+    #     save = os.path.join(os.path.join(
+    #         os.environ['USERPROFILE']), 'Desktop', 'exported')
 
-    os.makedirs(save, exist_ok=True)
-
-    QRImg.save(os.path.join(save, 'qrv4.png'))
-    print("QR generado con éxito, en la direccion:", save)
-
+    # os.makedirs(save, exist_ok=True)  
+    # print("QR generado con éxito, en la direccion:", save)
+    
+    return QRImg
 
 if __name__ == "__main__":
     makeQRDinamico()
