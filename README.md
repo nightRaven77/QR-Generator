@@ -71,12 +71,3 @@ Feel free to fork this project and submit pull requests with improvements.
 
 - [CustomTkinter](https://github.com/TomSchimansky/CustomTkinter) for the modern GUI elements
 - [qrcode](https://github.com/lincolnloop/python-qrcode) for QR code generation capabilities
-```
-
-Would you like me to add or modify any specific sections in the README? For example, we could add:
-1. Screenshots of the application
-2. More detailed usage instructions
-3. Specific configuration options
-4. Troubleshooting section
-
-Let me know what additional information you'd like to include!
