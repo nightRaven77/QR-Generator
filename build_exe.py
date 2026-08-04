@@ -15,6 +15,7 @@ try:
     import tomllib
 except ImportError:
     try:
+        # pyrefly: ignore [missing-import]
         import tomli as tomllib
     except ImportError:
         print("[ERROR] Necesitas instalar la librería 'tomli' para leer pyproject.toml")
@@ -110,10 +111,7 @@ def run_pyinstaller():
     icon_arg = []
     if os.path.exists(ICON_FILE):
         clean_icon_path = ICON_FILE.replace('\\', '/')
-        icon_arg = [
-            f'--icon={clean_icon_path}',
-            f'--add-data={clean_icon_path};media'
-        ]
+        icon_arg = [f'--icon={clean_icon_path}']
     else:
         print(f"[WARNING] Advertencia: Icono no encontrado. Se usará el predeterminado.")
 
