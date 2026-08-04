@@ -1,73 +1,92 @@
- # QR Code Generator
+# 🌀 Generador de Códigos QR Personalizados
 
-A customizable QR code generator with a modern graphical user interface built using Python. This application allows you to create stylized QR codes with various design options and embedded images.
+Un generador de códigos QR moderno y altamente personalizable con interfaz gráfica de usuario (GUI) construido en Python. Permite crear códigos QR con estilos de módulos únicos, colores personalizados (borde, centro, fondo) e incrustar imágenes en el centro.
 
-## Features
+---
 
-- Generate QR codes from any text or URL
-- Customize QR code appearance with different module styles:
-  - Circle modules
-  - Square modules with gaps
-  - Horizontal bars
-  - Vertical bars
-  - Rounded modules
-  - Default square modules
-- Add a custom image in the center of the QR code
-- Modern GUI built with CustomTkinter
+## ✨ Características
 
-## Requirements
+- 📝 **Conversión directa:** Genera códigos QR desde cualquier texto o URL.
+- 🎨 **Diseño Personalizable:**
+  - Estilo de módulos configurables (Círculos, cuadrados redondeados, barras horizontales/verticales, etc.).
+  - Selector de colores para el fondo, el borde y el centro del código QR.
+- 🖼️ **Incrustar Logotipos:** Añade una imagen en el centro del código QR y ajusta su tamaño/proporción interactivamente.
+- 💻 **Interfaz Moderna:** Desarrollada con `CustomTkinter` para una estética limpia, oscura y responsiva.
+- 🚀 **Compilación Sencilla:** Incluye un script listo (`build_exe.py`) para generar el ejecutable de Windows (`.exe`) con un solo comando.
 
-- Python 3.x
-- Required packages:
-  ```
-  customtkinter
-  qrcode
-  Pillow
-  ```
+---
 
-## Installation
+## 🛠️ Requisitos e Instalación
 
-1. Clone the repository:
+Este proyecto utiliza **`uv`** (el administrador de paquetes ultra rápido de Python) o el gestor estándar **`pip`**.
+
+### Opción A: Usando `uv` (Recomendado)
+
+1. Clonar el repositorio:
+   ```bash
+   git clone https://github.com/nightRaven77/QR-Generator.git
+   cd QR-Generator
+   ```
+
+2. Ejecutar la aplicación directamente (instala dependencias automáticamente en un entorno virtual):
+   ```bash
+   uv run main.py
+   ```
+
+### Opción B: Usando `pip` estándar
+
+1. Instalar las dependencias listadas en el `pyproject.toml`:
+   ```bash
+   pip install customtkinter qrcode Pillow tomli
+   ```
+
+2. Iniciar la aplicación:
+   ```bash
+   python main.py
+   ```
+
+---
+
+## 🚀 Cómo usar la Aplicación
+
+1. **Ingresa el texto o URL** en el campo indicado.
+2. **Selecciona colores personalizados** utilizando los botones de selección para el borde, centro y fondo.
+3. (Opcional) **Carga una imagen** para colocarla en el centro del QR y ajusta la proporción mediante el control deslizante (slider).
+4. **Elige el estilo de diseño** del QR desde el menú desplegable.
+5. Haz clic en **Generar**.
+6. Selecciona la ruta de tu equipo donde deseas guardar el archivo `.png` resultante.
+
+---
+
+## 📦 Compilación para Windows (`.exe`)
+
+El script de compilación genera un ejecutable autónomo con soporte de iconos y metadatos de versión:
+
 ```bash
-git clone https://github.com/nightRaven77/QR-Generator.git
+uv run build_exe.py
 ```
+*(O `python build_exe.py` si no utilizas uv)*
 
-2. Install the required packages:
-```bash
-pip install customtkinter qrcode Pillow
-```
+El ejecutable compilado se guardará en la carpeta `dist/QRGenerator.exe`.
 
-## Usage
+---
 
-1. Run the application:
-```bash
-python main.py
-```
-
-2. Enter the text or URL you want to convert to a QR code
-3. (Optional) Select an image to embed in the center of the QR code
-4. Choose a module style from the dropdown menu
-5. Click "Generate" to create your QR code
-6. The generated QR code will be saved in the "exported" folder on your Desktop
-
-## Project Structure
+## 📂 Estructura del Proyecto
 
 ```
 QR-Generator/
-├── main.py           # Main application file with GUI
-├── qrDinamico.py    # QR code generation logic
-
+├── media/               # Recursos multimedia (favicon, logotipos)
+├── build_exe.py         # Script para empaquetar la aplicación a .exe
+├── main.py              # Interfaz gráfica y flujo principal (GUI)
+├── qrDinamico.py        # Lógica de generación del código QR
+├── pyproject.toml       # Dependencias y metadatos del proyecto
+└── README.md            # Documentación del proyecto
 ```
 
-## Contributing
+---
 
-Feel free to fork this project and submit pull requests with improvements.
+## 🤝 Créditos y Tecnologías
 
-## License
-
-[Add your chosen license here]
-
-## Acknowledgments
-
-- [CustomTkinter](https://github.com/TomSchimansky/CustomTkinter) for the modern GUI elements
-- [qrcode](https://github.com/lincolnloop/python-qrcode) for QR code generation capabilities
+- [CustomTkinter](https://github.com/TomSchimansky/CustomTkinter) - Interfaz visual moderna para Tkinter.
+- [qrcode](https://github.com/lincolnloop/python-qrcode) - Generación de códigos QR en Python.
+- [Pillow](https://python-pillow.org/) - Manipulación de imágenes.
