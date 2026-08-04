@@ -13,3 +13,15 @@ output/
 # Misc
 .DS_Store
 .notes
+
+# PyInstaller spec files
+*.spec
+
+# IDEs and editors
+.vscode/
+.idea/
+
+# OS-specific files
+Thumbs.db
+ehthumbs.db
+Desktop.ini

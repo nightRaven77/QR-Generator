@@ -81,9 +81,27 @@ def btn_Generar():
         print(f"Error al generar el QR: {str(e)}")
 
 
+import os
+import sys
+
+def get_asset_path(relative_path):
+    """Obtiene la ruta absoluta del recurso, compatible con PyInstaller y desarrollo."""
+    try:
+        base_path = sys._MEIPASS
+    except AttributeError:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
 # estructura de la ventana
 app = customtkinter.CTk()
 app.title("QR Code Generator")
+
+# Set the window icon
+try:
+    app.iconbitmap(get_asset_path("media/favicon.ico"))
+except Exception as e:
+    print(f"No se pudo cargar el icono de la ventana: {e}")
+
 app.resizable(False, False)
 
 app.geometry("600x500")
