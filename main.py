@@ -843,6 +843,8 @@ class QRStudioApp(customtkinter.CTk):
             success = qrDinamico.copy_image_to_clipboard(self.current_qr_img)
             if success:
                 messagebox.showinfo("QR Studio Pro", "¡Imagen copiada al portapapeles con éxito!")
+            else:
+                messagebox.showerror("QR Studio Pro", "Error al copiar la imagen al portapapeles.")
 
     def _save_qr_action(self):
         fmt = self.export_format.get().upper()

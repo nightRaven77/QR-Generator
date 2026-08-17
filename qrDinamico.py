@@ -415,25 +415,93 @@ def copy_image_to_clipboard(pil_img: Image.Image) -> bool:
     """Copia la imagen PIL directamente al portapapeles de Windows / MacOS"""
     try:
         if sys.platform == "darwin":
-            output = BytesIO()
-            pil_img.save(output, format="PNG")
-            data = output.getvalue()
-            process = subprocess.Popen(["pbcopy", "-Device", "clipboard"], stdin=subprocess.PIPE)
-            process.communicate(data)
-            return True
+            import tempfile
+            import os
+            
+            # Crear un archivo temporal PNG
+            fd, tmp_path = tempfile.mkstemp(suffix=".png")
+            try:
+                os.close(fd)
+                pil_img.save(tmp_path, format="PNG")
+                
+                # Ejecutar osascript para copiar la imagen al portapapeles como PNGf
+                cmd = f'set the clipboard to (read (POSIX file "{tmp_path}") as «class PNGf»)'
+                subprocess.run(["osascript", "-e", cmd], check=True)
+                return True
+            except Exception as e:
+                print(f"Error copiando al portapapeles en macOS: {e}")
+                return False
+            finally:
+                if os.path.exists(tmp_path):
+                    os.remove(tmp_path)
+                    
         elif sys.platform == "win32":
             output = BytesIO()
             pil_img.convert("RGB").save(output, "BMP")
             data = output.getvalue()[14:]
-            import win32clipboard
-            win32clipboard.OpenClipboard()
-            win32clipboard.EmptyClipboard()
-            win32clipboard.SetClipboardData(win32clipboard.CF_DIB, data)
-            win32clipboard.CloseClipboard()
-            return True
+            output.close()
+            
+            import ctypes
+            from ctypes import c_size_t, memmove, windll
+            from ctypes.wintypes import HANDLE, HWND, LPVOID, UINT, BOOL
+            
+            # Constantes de Windows API
+            GHND = 0x0042
+            GMEM_SHARE = 0x2000
+            CF_DIB = 8
+            
+            # Declaración de APIs
+            GlobalAlloc = windll.kernel32.GlobalAlloc
+            GlobalAlloc.restype = HANDLE
+            GlobalAlloc.argtypes = [UINT, c_size_t]
+            
+            GlobalLock = windll.kernel32.GlobalLock
+            GlobalLock.restype = LPVOID
+            GlobalLock.argtypes = [HANDLE]
+            
+            GlobalUnlock = windll.kernel32.GlobalUnlock
+            GlobalUnlock.restype = BOOL
+            GlobalUnlock.argtypes = [HANDLE]
+            
+            OpenClipboard = windll.user32.OpenClipboard
+            OpenClipboard.restype = BOOL
+            OpenClipboard.argtypes = [HWND]
+            
+            EmptyClipboard = windll.user32.EmptyClipboard
+            EmptyClipboard.restype = BOOL
+            EmptyClipboard.argtypes = []
+            
+            SetClipboardData = windll.user32.SetClipboardData
+            SetClipboardData.restype = HANDLE
+            SetClipboardData.argtypes = [UINT, HANDLE]
+            
+            CloseClipboard = windll.user32.CloseClipboard
+            CloseClipboard.restype = BOOL
+            CloseClipboard.argtypes = []
+            
+            hData = GlobalAlloc(GHND | GMEM_SHARE, len(data))
+            if not hData:
+                return False
+                
+            pData = GlobalLock(hData)
+            if not pData:
+                return False
+                
+            memmove(pData, data, len(data))
+            GlobalUnlock(hData)
+            
+            if OpenClipboard(None):
+                try:
+                    EmptyClipboard()
+                    SetClipboardData(CF_DIB, hData)
+                finally:
+                    CloseClipboard()
+                return True
+            return False
     except Exception as e:
         print(f"Error copiando al portapapeles: {e}")
     return False
+
 
 def save_qr_as_svg(data: str, save_path: str, back_color: tuple, module_color: tuple) -> bool:
     """Exporta el código QR en formato vectorial SVG verdadero"""
