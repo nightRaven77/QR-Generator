@@ -115,14 +115,20 @@ def run_pyinstaller():
     else:
         print(f"[WARNING] Advertencia: Icono no encontrado. Se usará el predeterminado.")
 
+    add_data_arg = []
+    if os.path.exists("media"):
+        add_data_arg = [f'--add-data=media{os.pathsep}media']
+
     command = [
         sys.executable,
         "-m",
         "PyInstaller",
+        "-y",
         "--onefile",
         "--windowed",
         f"--name={APP_NAME}",
         f"--version-file={VERSION_TXT}",
+        *add_data_arg,
         *icon_arg,
         MAIN_SCRIPT
     ]
