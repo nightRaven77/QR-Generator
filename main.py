@@ -119,6 +119,25 @@ class QRStudioApp(customtkinter.CTk):
         self.logo_ratio = tk.DoubleVar(value=0.22)
         self.export_format = tk.StringVar(value="PNG")
 
+        # Nuevas variables avanzadas
+        self.logo_background_pad = tk.BooleanVar(value=True)
+        self.logo_background_color = "#ffffff"
+        self.module_scale = tk.DoubleVar(value=1.0)
+        self.card_corner_radius = tk.DoubleVar(value=1.0)
+        self.target_resolution = tk.StringVar(value="1200px")
+        self.canvas_padding_px = tk.IntVar(value=40)
+
+        self.use_top_heading = tk.BooleanVar(value=False)
+        self.top_heading_text = tk.StringVar(value="My QR Code")
+        self.top_heading_color = "#4338ca"
+        self.top_heading_size = tk.IntVar(value=25)
+
+        self.use_bottom_caption = tk.BooleanVar(value=False)
+        self.bottom_caption_text = tk.StringVar(value="Scan me")
+        self.bottom_caption_color = "#4338ca"
+        self.bottom_caption_size = tk.IntVar(value=25)
+        self.font_family = tk.StringVar(value="Sans-Serif")
+
         self.logo_path = None
         self.current_qr_img = None
         self.history_records = []
@@ -246,17 +265,21 @@ class QRStudioApp(customtkinter.CTk):
         )
         mshape_lbl.pack(anchor="w", padx=12, pady=(8, 4))
 
-        mshape_seg = customtkinter.CTkSegmentedButton(
+        module_options = [
+            "square", "soft_rounded", "dots", "organic", "diamond",
+            "pebble", "leaf", "star", "heart", "cross",
+            "rounded", "horizontal_bars", "vertical_bars", "gapped_square"
+        ]
+        mshape_menu = customtkinter.CTkOptionMenu(
             studio_frame,
-            values=["square", "rounded", "dots", "diamond", "organic"],
+            values=module_options,
             variable=self.module_shape,
-            selected_color="#00f0ff",
-            selected_hover_color="#00dbe9",
-            unselected_color="#282a2e",
+            fg_color="#282a2e",
+            button_color="#333539",
             text_color="#e2e2e8",
             command=lambda val: self._on_setting_changed()
         )
-        mshape_seg.pack(fill="x", padx=12, pady=(0, 12))
+        mshape_menu.pack(fill="x", padx=12, pady=(0, 12))
 
         # Finder Frames & Centers (Esquinas Ojos)
         finders_grid = customtkinter.CTkFrame(studio_frame, fg_color="transparent")
@@ -266,7 +289,7 @@ class QRStudioApp(customtkinter.CTk):
         ff_lbl = customtkinter.CTkLabel(finders_grid, text="Marco de Ojos:", font=("Hanken Grotesk", 11, "bold"))
         ff_lbl.grid(row=0, column=0, sticky="w", padx=4)
         ff_menu = customtkinter.CTkOptionMenu(
-            finders_grid, values=["square", "rounded", "circle"], variable=self.finder_frame_shape,
+            finders_grid, values=["square", "circle", "soft_square", "leaf", "diamond", "shield"], variable=self.finder_frame_shape,
             fg_color="#282a2e", button_color="#333539", command=lambda val: self._on_setting_changed()
         )
         ff_menu.grid(row=1, column=0, sticky="ew", padx=4, pady=2)
@@ -274,7 +297,7 @@ class QRStudioApp(customtkinter.CTk):
         fc_lbl = customtkinter.CTkLabel(finders_grid, text="Centro de Ojos:", font=("Hanken Grotesk", 11, "bold"))
         fc_lbl.grid(row=0, column=1, sticky="w", padx=4)
         fc_menu = customtkinter.CTkOptionMenu(
-            finders_grid, values=["square", "circle"], variable=self.finder_center_shape,
+            finders_grid, values=["square", "circle", "soft_square", "diamond", "leaf", "star", "heart"], variable=self.finder_center_shape,
             fg_color="#282a2e", button_color="#333539", command=lambda val: self._on_setting_changed()
         )
         fc_menu.grid(row=1, column=1, sticky="ew", padx=4, pady=2)
@@ -348,20 +371,155 @@ class QRStudioApp(customtkinter.CTk):
                 except Exception:
                     pass
 
-        # Slider Proporción de Logo
-        slider_lbl = customtkinter.CTkLabel(
-            studio_frame, text="Tamaño del Logo:", font=("Hanken Grotesk", 11)
+        # Toggle y Selector de Color para Fondo de Logo (Show logo background & color)
+        logo_bg_frame = customtkinter.CTkFrame(studio_frame, fg_color="transparent")
+        logo_bg_frame.pack(fill="x", padx=12, pady=(4, 6))
+
+        logo_pad_switch = customtkinter.CTkSwitch(
+            logo_bg_frame, text="Show logo background", variable=self.logo_background_pad,
+            font=("Hanken Grotesk", 11, "bold"), progress_color="#00f0ff", command=lambda: self._on_setting_changed()
         )
-        slider_lbl.pack(anchor="w", padx=12, pady=(4, 0))
-        logo_slider = customtkinter.CTkSlider(
-            studio_frame, from_=0.10, to=0.35, variable=self.logo_ratio,
+        logo_pad_switch.pack(side="left")
+
+        self.btn_color_logo_bg = customtkinter.CTkButton(
+            logo_bg_frame, text="Logo BG Color", font=("Hanken Grotesk", 10), width=100, height=26,
+            fg_color=self.logo_background_color, text_color="#000000" if self.logo_background_color=="#ffffff" else "#ffffff",
+            command=lambda: self._choose_color("logobg")
+        )
+        self.btn_color_logo_bg.pack(side="right")
+
+        # Grid de Sliders de Ajuste Fino (Module size, Logo size, Card corner radius)
+        sliders_grid = customtkinter.CTkFrame(studio_frame, fg_color="transparent")
+        sliders_grid.pack(fill="x", padx=12, pady=(0, 8))
+        sliders_grid.grid_columnconfigure((0, 1, 2), weight=1)
+
+        # Module size slider
+        mod_sz_lbl = customtkinter.CTkLabel(sliders_grid, text="Module size:", font=("Hanken Grotesk", 11))
+        mod_sz_lbl.grid(row=0, column=0, sticky="w")
+        mod_sz_slider = customtkinter.CTkSlider(
+            sliders_grid, from_=0.5, to=1.0, variable=self.module_scale,
             button_color="#00f0ff", button_hover_color="#00dbe9", command=lambda val: self._on_setting_changed()
         )
-        logo_slider.pack(fill="x", padx=12, pady=(0, 12))
+        mod_sz_slider.grid(row=1, column=0, sticky="ew", padx=2, pady=(0, 4))
 
-        # Nivel de Corrección de Errores
+        # Logo size slider
+        logo_sz_lbl = customtkinter.CTkLabel(sliders_grid, text="Logo size:", font=("Hanken Grotesk", 11))
+        logo_sz_lbl.grid(row=0, column=1, sticky="w")
+        logo_sz_slider = customtkinter.CTkSlider(
+            sliders_grid, from_=0.05, to=0.35, variable=self.logo_ratio,
+            button_color="#00f0ff", button_hover_color="#00dbe9", command=lambda val: self._on_setting_changed()
+        )
+        logo_sz_slider.grid(row=1, column=1, sticky="ew", padx=2, pady=(0, 4))
+
+        # Card corner radius slider
+        card_r_lbl = customtkinter.CTkLabel(sliders_grid, text="Card corner radius:", font=("Hanken Grotesk", 11))
+        card_r_lbl.grid(row=0, column=2, sticky="w")
+        card_r_slider = customtkinter.CTkSlider(
+            sliders_grid, from_=0.0, to=20.0, variable=self.card_corner_radius,
+            button_color="#00f0ff", button_hover_color="#00dbe9", command=lambda val: self._on_setting_changed()
+        )
+        card_r_slider.grid(row=1, column=2, sticky="ew", padx=2, pady=(0, 4))
+
+        # Encabezado Superior (Add top heading)
+        head_frame = customtkinter.CTkFrame(studio_frame, fg_color="transparent")
+        head_frame.pack(fill="x", padx=12, pady=(8, 2))
+
+        head_switch = customtkinter.CTkSwitch(
+            head_frame, text="Add top heading", variable=self.use_top_heading,
+            font=("Hanken Grotesk", 11, "bold"), progress_color="#00f0ff", command=lambda: self._on_setting_changed()
+        )
+        head_switch.pack(side="left")
+
+        self.btn_color_head = customtkinter.CTkButton(
+            head_frame, text="Heading Color", font=("Hanken Grotesk", 10), width=100, height=24,
+            fg_color=self.top_heading_color, command=lambda: self._choose_color("head")
+        )
+        self.btn_color_head.pack(side="right")
+
+        head_ctrl_grid = customtkinter.CTkFrame(studio_frame, fg_color="transparent")
+        head_ctrl_grid.pack(fill="x", padx=12, pady=(0, 8))
+        head_ctrl_grid.grid_columnconfigure(0, weight=3)
+        head_ctrl_grid.grid_columnconfigure(1, weight=2)
+
+        self.head_entry = customtkinter.CTkEntry(head_ctrl_grid, textvariable=self.top_heading_text, placeholder_text="Heading text...")
+        self.head_entry.grid(row=0, column=0, sticky="ew", padx=(0, 4))
+        self.head_entry.bind("<KeyRelease>", lambda e: self._on_setting_changed())
+
+        head_sz_slider = customtkinter.CTkSlider(
+            head_ctrl_grid, from_=12, to=48, variable=self.top_heading_size,
+            button_color="#00f0ff", command=lambda val: self._on_setting_changed()
+        )
+        head_sz_slider.grid(row=0, column=1, sticky="ew", padx=(4, 0))
+
+        # Leyenda Inferior (Add bottom caption)
+        cap_frame = customtkinter.CTkFrame(studio_frame, fg_color="transparent")
+        cap_frame.pack(fill="x", padx=12, pady=(6, 2))
+
+        cap_switch = customtkinter.CTkSwitch(
+            cap_frame, text="Add bottom caption", variable=self.use_bottom_caption,
+            font=("Hanken Grotesk", 11, "bold"), progress_color="#00f0ff", command=lambda: self._on_setting_changed()
+        )
+        cap_switch.pack(side="left")
+
+        self.btn_color_cap = customtkinter.CTkButton(
+            cap_frame, text="Caption Color", font=("Hanken Grotesk", 10), width=100, height=24,
+            fg_color=self.bottom_caption_color, command=lambda: self._choose_color("cap")
+        )
+        self.btn_color_cap.pack(side="right")
+
+        cap_ctrl_grid = customtkinter.CTkFrame(studio_frame, fg_color="transparent")
+        cap_ctrl_grid.pack(fill="x", padx=12, pady=(0, 12))
+        cap_ctrl_grid.grid_columnconfigure(0, weight=3)
+        cap_ctrl_grid.grid_columnconfigure(1, weight=2)
+
+        self.cap_entry = customtkinter.CTkEntry(cap_ctrl_grid, textvariable=self.bottom_caption_text, placeholder_text="Caption text...")
+        self.cap_entry.grid(row=0, column=0, sticky="ew", padx=(0, 4))
+        self.cap_entry.bind("<KeyRelease>", lambda e: self._on_setting_changed())
+
+        cap_sz_slider = customtkinter.CTkSlider(
+            cap_ctrl_grid, from_=12, to=48, variable=self.bottom_caption_size,
+            button_color="#00f0ff", command=lambda val: self._on_setting_changed()
+        )
+        cap_sz_slider.grid(row=0, column=1, sticky="ew", padx=(4, 0))
+
+        # Selector de Tipo de Fuente (Font Family)
+        font_fam_frame = customtkinter.CTkFrame(studio_frame, fg_color="transparent")
+        font_fam_frame.pack(fill="x", padx=12, pady=(0, 10))
+
+        font_fam_lbl = customtkinter.CTkLabel(font_fam_frame, text="Tipo de Fuente:", font=("Hanken Grotesk", 11, "bold"))
+        font_fam_lbl.pack(side="left")
+
+        font_fam_menu = customtkinter.CTkOptionMenu(
+            font_fam_frame, values=["Sans-Serif", "Serif", "Monospace", "Trebuchet", "Impact", "Futura"],
+            variable=self.font_family, fg_color="#282a2e", button_color="#333539", width=140,
+            command=lambda val: self._on_setting_changed()
+        )
+        font_fam_menu.pack(side="right")
+
+        # Fila de Tamaño / Padding / Damage recovery
+        export_cfg_grid = customtkinter.CTkFrame(studio_frame, fg_color="transparent")
+        export_cfg_grid.pack(fill="x", padx=12, pady=(0, 12))
+        export_cfg_grid.grid_columnconfigure((0, 1), weight=1)
+
+        res_lbl = customtkinter.CTkLabel(export_cfg_grid, text="Size (Resolución):", font=("Hanken Grotesk", 11))
+        res_lbl.grid(row=0, column=0, sticky="w")
+        res_menu = customtkinter.CTkOptionMenu(
+            export_cfg_grid, values=["300px", "600px", "1200px", "2400px"], variable=self.target_resolution,
+            fg_color="#282a2e", button_color="#333539", command=lambda val: self._on_setting_changed()
+        )
+        res_menu.grid(row=1, column=0, sticky="ew", padx=2, pady=2)
+
+        pad_lbl = customtkinter.CTkLabel(export_cfg_grid, text="Padding (Margen px):", font=("Hanken Grotesk", 11))
+        pad_lbl.grid(row=0, column=1, sticky="w")
+        pad_slider = customtkinter.CTkSlider(
+            export_cfg_grid, from_=0, to=80, variable=self.canvas_padding_px,
+            button_color="#00f0ff", button_hover_color="#00dbe9", command=lambda val: self._on_setting_changed()
+        )
+        pad_slider.grid(row=1, column=1, sticky="ew", padx=2, pady=2)
+
+        # Damage recovery (Nivel de Corrección de Errores)
         ec_lbl = customtkinter.CTkLabel(
-            studio_frame, text="Nivel de Corrección de Errores (Redundancia):", font=("Hanken Grotesk", 11, "bold")
+            studio_frame, text="Damage recovery (Nivel de error):", font=("Hanken Grotesk", 11, "bold")
         )
         ec_lbl.pack(anchor="w", padx=12, pady=(4, 2))
 
@@ -557,6 +715,13 @@ class QRStudioApp(customtkinter.CTk):
         """Genera el QR y actualiza la vista previa"""
         data_str = self._get_current_payload_string()
         ec_val = self.error_correction.get().split()[0] # Extraer L, M, Q o H
+        try:
+            res_px = int(self.target_resolution.get().replace("px", ""))
+        except Exception:
+            res_px = 1200
+
+        top_txt = self.top_heading_text.get().strip() if self.use_top_heading.get() else ""
+        bot_txt = self.bottom_caption_text.get().strip() if self.use_bottom_caption.get() else ""
 
         self.current_qr_img = qrDinamico.makeQRDinamico(
             data=data_str,
@@ -565,15 +730,28 @@ class QRStudioApp(customtkinter.CTk):
             module_color=self.module_color,
             finder_frame_color=self.finder_frame_color,
             finder_center_color=self.finder_center_color,
+            logo_background_color=self.logo_background_color,
             module_shape=self.module_shape.get(),
             finder_frame_shape=self.finder_frame_shape.get(),
             finder_center_shape=self.finder_center_shape.get(),
             error_correction=ec_val,
-            logo_ratio=self.logo_ratio.get()
+            logo_ratio=self.logo_ratio.get(),
+            logo_background_pad=self.logo_background_pad.get(),
+            module_scale=self.module_scale.get(),
+            card_corner_radius=self.card_corner_radius.get(),
+            top_heading=top_txt,
+            top_heading_color=self.top_heading_color,
+            top_heading_size=self.top_heading_size.get(),
+            bottom_caption=bot_txt,
+            bottom_caption_color=self.bottom_caption_color,
+            bottom_caption_size=self.bottom_caption_size.get(),
+            font_family=self.font_family.get(),
+            target_resolution=res_px,
+            canvas_padding_px=self.canvas_padding_px.get()
         )
 
-        # Actualizar Vista Previa CTkImage
-        preview_pil = self.current_qr_img.resize((320, 320), Image.Resampling.LANCZOS)
+        # Actualizar Vista Previa CTkImage usando BICUBIC para eliminar destellos/líneas de antialiasing
+        preview_pil = self.current_qr_img.resize((320, 320), Image.Resampling.BICUBIC)
         ctk_qr = customtkinter.CTkImage(light_image=preview_pil, dark_image=preview_pil, size=(320, 320))
         self.qr_image_label.configure(image=ctk_qr)
 
@@ -613,6 +791,18 @@ class QRStudioApp(customtkinter.CTk):
             elif target == "fcenter":
                 self.finder_center_color = hex_c
                 self.btn_color_fc.configure(fg_color=hex_c)
+            elif target == "logobg":
+                self.logo_background_color = hex_c
+                if hasattr(self, "btn_color_logo_bg"):
+                    self.btn_color_logo_bg.configure(fg_color=hex_c, text_color="#000000" if hex_c=="#ffffff" else "#ffffff")
+            elif target == "head":
+                self.top_heading_color = hex_c
+                if hasattr(self, "btn_color_head"):
+                    self.btn_color_head.configure(fg_color=hex_c)
+            elif target == "cap":
+                self.bottom_caption_color = hex_c
+                if hasattr(self, "btn_color_cap"):
+                    self.btn_color_cap.configure(fg_color=hex_c)
             self._render_qr_preview()
 
     def _apply_preset_theme(self, name):
