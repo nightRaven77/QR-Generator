@@ -4,6 +4,10 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -17,7 +21,7 @@ jobs:
             artifact_path: dist/QRGenerator.exe
           - os: macos-latest
             asset_name: QRGenerator-macOS.zip
-            artifact_path: dist/QRGenerator
+            artifact_path: dist/QRGenerator.app
 
     steps:
       - name: Checkout repository
@@ -26,30 +30,108 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.13'
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install qrcode pillow customtkinter pyinstaller tomli
 
-      - name: Build executable
+      - name: Build executable (and Ad-Hoc sign on macOS)
         run: |
           python build_exe.py
 
-      - name: Compress asset (Windows)
-        if: runner.os == 'Windows'
-        run: |
-          powershell Compress-Archive -Path dist/QRGenerator.exe -DestinationPath ${{ matrix.asset_name }}
+      # --- WINDOWS CODE SIGNING ---
+      # Opción 1: SignPath.io (Gratis para proyectos Open Source en GitHub)
+      # Se activa automáticamente al configurar el secret SIGNPATH_API_TOKEN
+      - name: Upload unsigned artifact for SignPath (Windows)
+        if: runner.os == 'Windows' && env.SIGNPATH_API_TOKEN != ''
+        env:
+          SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-windows-exe
+          path: dist/QRGenerator.exe
 
-      - name: Compress asset (macOS)
+      - name: Submit signing request to SignPath.io (Open Source)
+        if: runner.os == 'Windows' && env.SIGNPATH_API_TOKEN != ''
+        env:
+          SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
+        uses: signpath/github-action-submit-signing-request@v1
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ secrets.SIGNPATH_PROJECT_SLUG || 'qr-generator' }}
+          signing-policy-slug: ${{ secrets.SIGNPATH_POLICY_SLUG || 'release-signing' }}
+          github-artifact-id: unsigned-windows-exe
+          wait-for-completion: true
+          output-artifact-directory: dist
+
+      # Opción 2: Certificado PFX propio o Firma Authenticode SHA-256 (mientras no esté activo SignPath)
+      - name: Sign Windows executable (PFX or Authenticode SHA-256)
+        if: runner.os == 'Windows' && env.SIGNPATH_API_TOKEN == ''
+        env:
+          SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
+          WINDOWS_PFX_BASE64: ${{ secrets.WINDOWS_PFX_BASE64 }}
+          WINDOWS_PFX_PASSWORD: ${{ secrets.WINDOWS_PFX_PASSWORD }}
+        shell: pwsh
+        run: |
+          if ($env:WINDOWS_PFX_BASE64) {
+            Write-Host "Importando certificado PFX desde GitHub Secrets..."
+            $pfxBytes = [Convert]::FromBase64String($env:WINDOWS_PFX_BASE64)
+            $pfxPath = Join-Path $RUNNER_TEMP "codesign.pfx"
+            [IO.File]::WriteAllBytes($pfxPath, $pfxBytes)
+            $env:WINDOWS_PFX_PATH = $pfxPath
+            python -c "import build_exe; build_exe.sign_windows_executable(build_exe.read_pyproject())"
+            Remove-Item $pfxPath -Force -ErrorAction SilentlyContinue
+          } else {
+            Write-Host "Aplicando firma Authenticode SHA-256..."
+            $env:SELF_SIGN_EXE = "1"
+            python -c "import build_exe; build_exe.sign_windows_executable(build_exe.read_pyproject())"
+          }
+
+      - name: Compress and generate SHA-256 (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $filesToZip = @("dist/QRGenerator.exe")
+          if (Test-Path "dist/QRGenerator-PublicCert.cer") {
+            $filesToZip += "dist/QRGenerator-PublicCert.cer"
+          }
+          Compress-Archive -Path $filesToZip -DestinationPath ${{ matrix.asset_name }} -Force
+          $hash = (Get-FileHash -Path ${{ matrix.asset_name }} -Algorithm SHA256).Hash.ToLower()
+          "$hash  ${{ matrix.asset_name }}" | Out-File -FilePath "${{ matrix.asset_name }}.sha256" -Encoding utf8
+
+      # --- MACOS PACKAGING & GATEKEEPER HELPER ---
+      - name: Prepare macOS bundle & compress with ditto
         if: runner.os == 'macOS'
         run: |
-          zip -r ${{ matrix.asset_name }} dist/QRGenerator dist/QRGenerator.app
+          mkdir -p dist/mac_package
+          cp -R dist/QRGenerator.app dist/mac_package/
+
+          cat << 'EOF' > dist/mac_package/Abrir_Sin_Bloqueo.command
+          #!/bin/bash
+          DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+          APP="$DIR/QRGenerator.app"
+          echo "Eliminando atributo de cuarentena de Gatekeeper en QRGenerator.app..."
+          xattr -cr "$APP"
+          chmod +x "$APP/Contents/MacOS/QRGenerator"
+          echo "Listo. Abriendo QRGenerator..."
+          open "$APP"
+          EOF
+          chmod +x dist/mac_package/Abrir_Sin_Bloqueo.command
+
+          # ditto preserva enlaces simbólicos, permisos y la firma codesign del .app
+          ditto -c -k --sequesterRsrc dist/mac_package ${{ matrix.asset_name }}
+          shasum -a 256 ${{ matrix.asset_name }} > ${{ matrix.asset_name }}.sha256
 
       - name: Upload artifact to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: ${{ matrix.asset_name }}
+          files: |
+            ${{ matrix.asset_name }}
+            ${{ matrix.asset_name }}.sha256
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
