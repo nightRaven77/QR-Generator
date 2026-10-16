@@ -42,30 +42,36 @@ jobs:
           python build_exe.py
 
       # --- WINDOWS CODE SIGNING ---
-      # Opción 1: SignPath.io (Gratis para proyectos Open Source en GitHub)
+      # Opción 1: SignPath.io (Funciona tanto en Plan Gratuito como en Open Source)
       # Se activa automáticamente al configurar el secret SIGNPATH_API_TOKEN
-      - name: Upload unsigned artifact for SignPath (Windows)
+      - name: Submit signing request to SignPath.io
         if: runner.os == 'Windows' && env.SIGNPATH_API_TOKEN != ''
         env:
           SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: unsigned-windows-exe
-          path: dist/QRGenerator.exe
+          SIGNPATH_ORGANIZATION_ID: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
+          SIGNPATH_PROJECT_SLUG: ${{ secrets.SIGNPATH_PROJECT_SLUG }}
+          SIGNPATH_POLICY_SLUG: ${{ secrets.SIGNPATH_POLICY_SLUG }}
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Write-Host "Instalando módulo oficial de SignPath..."
+          Install-Module -Name SignPath -Scope CurrentUser -Force -AllowClobber
 
-      - name: Submit signing request to SignPath.io (Open Source)
-        if: runner.os == 'Windows' && env.SIGNPATH_API_TOKEN != ''
-        env:
-          SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
-        uses: signpath/github-action-submit-signing-request@v1
-        with:
-          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
-          organization-id: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
-          project-slug: ${{ secrets.SIGNPATH_PROJECT_SLUG || 'qr-generator' }}
-          signing-policy-slug: ${{ secrets.SIGNPATH_POLICY_SLUG || 'release-signing' }}
-          github-artifact-id: unsigned-windows-exe
-          wait-for-completion: true
-          output-artifact-directory: dist
+          $projectSlug = if ($env:SIGNPATH_PROJECT_SLUG) { $env:SIGNPATH_PROJECT_SLUG } else { "qr-generator" }
+          $policySlug = if ($env:SIGNPATH_POLICY_SLUG) { $env:SIGNPATH_POLICY_SLUG } else { "release-signing" }
+          $secureToken = ConvertTo-SecureString -String $env:SIGNPATH_API_TOKEN.Trim() -AsPlainText -Force
+
+          Write-Host "Enviando dist/QRGenerator.exe a SignPath (Project: '$projectSlug', Policy: '$policySlug')..."
+          Submit-SigningRequest `
+            -OrganizationId $env:SIGNPATH_ORGANIZATION_ID.Trim() `
+            -ApiToken $secureToken `
+            -ProjectSlug $projectSlug.Trim() `
+            -SigningPolicySlug $policySlug.Trim() `
+            -InputArtifactPath "dist/QRGenerator.exe" `
+            -OutputArtifactPath "dist/QRGenerator.exe" `
+            -WaitForCompletion `
+            -Force
+          Write-Host "¡Ejecutable firmado exitosamente por SignPath!"
 
       # Opción 2: Certificado PFX propio o Firma Authenticode SHA-256 (mientras no esté activo SignPath)
       - name: Sign Windows executable (PFX or Authenticode SHA-256)
