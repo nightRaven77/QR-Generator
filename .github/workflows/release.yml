@@ -57,16 +57,26 @@ jobs:
           Write-Host "Instalando módulo oficial de SignPath..."
           Install-Module -Name SignPath -Scope CurrentUser -Force -AllowClobber
 
-          $projectSlug = if ($env:SIGNPATH_PROJECT_SLUG) { $env:SIGNPATH_PROJECT_SLUG } else { "qr-generator" }
-          $policySlug = if ($env:SIGNPATH_POLICY_SLUG) { $env:SIGNPATH_POLICY_SLUG } else { "release-signing" }
-          $secureToken = ConvertTo-SecureString -String $env:SIGNPATH_API_TOKEN.Trim() -AsPlainText -Force
+          $projectSlug = if ($env:SIGNPATH_PROJECT_SLUG) { $env:SIGNPATH_PROJECT_SLUG.Trim() } else { "qr-generator" }
+          $policySlug = if ($env:SIGNPATH_POLICY_SLUG) { $env:SIGNPATH_POLICY_SLUG.Trim() } else { "release-signing" }
+          $token = $env:SIGNPATH_API_TOKEN.Trim()
+          if ($token.StartsWith("Bearer ", [System.StringComparison]::OrdinalIgnoreCase)) {
+            $token = $token.Substring(7).Trim()
+          }
+
+          $paramType = (Get-Command Submit-SigningRequest).Parameters['ApiToken'].ParameterType
+          $apiTokenArg = if ($paramType -eq [securestring]) {
+            ConvertTo-SecureString -String $token -AsPlainText -Force
+          } else {
+            $token
+          }
 
           Write-Host "Enviando dist/QRGenerator.exe a SignPath (Project: '$projectSlug', Policy: '$policySlug')..."
           Submit-SigningRequest `
             -OrganizationId $env:SIGNPATH_ORGANIZATION_ID.Trim() `
-            -ApiToken $secureToken `
-            -ProjectSlug $projectSlug.Trim() `
-            -SigningPolicySlug $policySlug.Trim() `
+            -ApiToken $apiTokenArg `
+            -ProjectSlug $projectSlug `
+            -SigningPolicySlug $policySlug `
             -InputArtifactPath "dist/QRGenerator.exe" `
             -OutputArtifactPath "dist/QRGenerator.exe" `
             -WaitForCompletion `
